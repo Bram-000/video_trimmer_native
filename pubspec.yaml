@@ -10,15 +10,15 @@ dependencies:
   flutter:
     sdk: flutter
 
-  video_player: ^2.9.2
-  ffmpeg_kit_flutter: ^6.0.3
-  path_provider: ^2.1.1
-  intl: ^0.20.0
+  video_player: ^2.9.5
+  path_provider: ^2.1.5
+  intl: ^0.20.2
   path: ^1.9.1
   transparent_image: ^2.0.1
+  easy_video_editor: ^0.0.5
 
 dev_dependencies:
   flutter_lints: ^5.0.0
-  lints: ^5.0.0
+  lints: ^5.1.1
 
 flutter:

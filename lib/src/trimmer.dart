@@ -1,14 +1,12 @@
 import 'dart:async';
 import 'dart:io';
-import 'package:ffmpeg_kit_flutter/ffmpeg_kit.dart';
-import 'package:ffmpeg_kit_flutter/ffmpeg_kit_config.dart';
-import 'package:ffmpeg_kit_flutter/return_code.dart';
 import 'package:path/path.dart';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:video_player/video_player.dart';
+import 'package:video_trimmer/src/services/easy_video_editor.dart';
 import 'package:video_trimmer/src/utils/file_formats.dart';
 import 'package:video_trimmer/src/utils/storage_dir.dart';
 
@@ -165,7 +163,6 @@ class Trimmer {
     required Function(String? outputPath) onSave,
     bool applyVideoEncoding = false,
     FileFormat? outputFormat,
-    String? ffmpegCommand,
     String? customVideoFormat,
     int? fpsGIF,
     int? scaleGIF,
@@ -176,8 +173,6 @@ class Trimmer {
     final String videoPath = currentVideoFile!.path;
     final String videoName = basename(videoPath).split('.')[0];
 
-    String command;
-
     // Formatting Date and Time
     String dateTime = DateFormat.yMMMd()
         .addPattern('-')
@@ -185,7 +180,6 @@ class Trimmer {
         .format(DateTime.now())
         .toString();
 
-    // String _resultString;
     String outputPath;
     String? outputFormatString;
     String formattedDateTime = dateTime.replaceAll(' ', '');
@@ -222,50 +216,22 @@ class Trimmer {
       outputFormatString = outputFormat.toString();
     }
 
-    String trimLengthCommand =
-        ' -ss $startPoint -i "$videoPath" -t ${endPoint - startPoint} -avoid_negative_ts make_zero ';
-
-    if (ffmpegCommand == null) {
-      command = '$trimLengthCommand -c:a copy ';
-
-      if (!applyVideoEncoding) {
-        command += '-c:v copy ';
-      }
-
-      if (outputFormat == FileFormat.gif) {
-        fpsGIF ??= 10;
-        scaleGIF ??= 480;
-        command =
-            '$trimLengthCommand -vf "fps=$fpsGIF,scale=$scaleGIF:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" -loop 0 ';
-      }
-    } else {
-      command = '$trimLengthCommand $ffmpegCommand ';
-      outputFormatString = customVideoFormat;
-    }
-
     outputPath = '$path$videoFileName$outputFormatString';
 
-    command += '"$outputPath"';
 
-    FFmpegKit.executeAsync(command, (session) async {
-      final state =
-          FFmpegKitConfig.sessionStateToString(await session.getState());
-      final returnCode = await session.getReturnCode();
-
-      debugPrint("FFmpeg process exited with state $state and rc $returnCode");
-
-      if (ReturnCode.isSuccess(returnCode)) {
-        debugPrint("FFmpeg processing completed successfully.");
-        debugPrint('Video successfully saved');
-        onSave(outputPath);
-      } else {
-        debugPrint("FFmpeg processing failed.");
-        debugPrint('Couldn\'t save the video');
-        onSave(null);
-      }
-    });
-
-    // return _outputPath;
+    final trimmedVideo = await EasyVideoEditor.trimVideo(
+      videoPath,
+      outputPath,
+      startValue.toInt(),
+      endValue.toInt(),
+    );
+    if(trimmedVideo != null) {
+      onSave(trimmedVideo);
+    } else {
+      debugPrint("Trim video failed");
+      debugPrint('Couldn\'t save the video');
+      onSave(null);
+    }
   }
 
   /// For getting the video controller state, to know whether the

@@ -3,8 +3,8 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui';
 
-import 'package:ffmpeg_kit_flutter/ffmpeg_kit.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:video_trimmer/src/services/easy_video_editor.dart';
 
 /// Formats a [Duration] object to a human-readable string.
 ///
@@ -107,17 +107,7 @@ Stream<List<Uint8List?>> generateThumbnail({
         await File(thumbnailPath).delete();
       }
 
-      // Create FFmpeg command to extract a resized, lower-quality thumbnail
-      final command = [
-        '-ss $formattedTimestamp', // Seek to timestamp
-        '-i "$videoPath"', // Input downscaled video
-        '-frames:v 1',
-        '-q:v ${_mapQualityToFFmpegScale(quality)}', // Lower quality
-        '"$thumbnailPath"', // Output file
-      ].join(' ');
-
-      // Execute the FFmpeg command
-      await FFmpegKit.execute(command);
+       await EasyVideoEditor.getThumbnail(videoPath, timestamp,thumbnailPath);
 
       // Read the generated thumbnail file
       if (File(thumbnailPath).existsSync()) {
